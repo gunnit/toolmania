@@ -1,0 +1,38 @@
+<!-- aitools/templates/aitools/tool_detail.html -->
+{% extends 'aitools/base.html' %}
+
+{% block title %}{{ tool.name }} - AI Tools{% endblock %}
+
+{% block content %}
+    <div class="container mt-5">
+        <h1 class="display-4">{{ tool.name }}</h1>
+        <p class="lead">{{ tool.short_description }}</p>
+
+        <div class="card mb-3">
+            <img src="{{ tool.image_url }}" class="card-img-top" alt="{{ tool.name }}">
+            <div class="card-body">
+                <h5 class="card-title">{{ tool.name }}</h5>
+                <p class="card-text">{{ tool.description }}</p>
+                <ul class="list-group">
+                    <li class="list-group-item"><strong>Category:</strong> {{ tool.category }}</li>
+                    <li class="list-group-item"><strong>Subcategory:</strong> {{ tool.subcategory }}</li>
+                    <li class="list-group-item"><strong>Developer:</strong> {{ tool.developer }}</li>
+                    <li class="list-group-item"><strong>Release Date:</strong> {{ tool.release_date }}</li>
+                    <li class="list-group-item"><strong>Rating:</strong> {{ tool.rating }}</li>
+                    <li class="list-group-item"><strong>License Type:</strong> {{ tool.license_type }}</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Additional Information Section -->
+        <div class="mt-4">
+            <h2>Additional Information</h2>
+            <p>{{ tool.additional_information }}</p>
+        </div>
+
+        <!-- Visit Button -->
+        <div class="mt-4">
+            <a href="{{ tool.url }}" class="btn btn-primary" target="_blank">Visit the Tool</a>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,221 @@
+{% extends 'aitools/base.html' %}
+
+{% block title %}Home - AI Tools{% endblock %}
+
+<style>
+    /* Style for the dropdown menu of typeahead */
+.tt-menu {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 5px 10px rgba(0,0,0,.2);
+    margin-top: 2px;
+    padding: 0;
+    width: 100%;
+    max-height: 300px; /* Adjust as needed */
+    overflow-y: auto; /* Enable scroll if too many items */
+}
+
+/* Style for each suggestion item */
+.suggestion-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+/* Image in suggestion item */
+.suggestion-img {
+    width: 50px; /* Adjust as needed */
+    height: 50px; /* Adjust as needed */
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+/* Text content in suggestion item */
+.suggestion-text {
+    flex: 1;
+}
+
+.suggestion-text strong {
+    display: block;
+    color: #333;
+}
+
+.suggestion-text p {
+    margin: 0;
+    font-size: .9em;
+    color: #666;
+}
+
+</style>
+
+{% block content %}
+<div class="hero-section py-5 text-white text-center" style="background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)),url('https://images.unsplash.com/photo-1507238691740-187a5b1d37b8'); background-size: cover;">
+    <div class="container">
+        <h1 class="display-4">Welcome to ToolMania</h1>
+        <p class="lead">Discover the latest and most effective AI tools. Displaying: 2500 tools</p>
+        <!-- Newsletter Signup Form -->
+        <div class="newsletter-signup mt-4">
+             <!-- Search form -->
+    <div id="search-container" class="text-center mb-3">
+        <input class="form-control" id="search-input" type="text" placeholder="Search tools...">
+    </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="container mt-5">
+   
+    <!-- Results container where cards will be dynamically loaded -->
+    <div class="row row-cols-1 row-cols-md-3 g-4" id="results-container">
+            {% for tool in page_obj %}
+                <div class="col">
+    
+                    <div class="card h-100">
+                        <!-- Fixed image dimensions and cover if larger -->
+                        <img src="{{ tool.image_url }}" class="card-img-top" alt="{{ tool.name }}" style="height: 200px; object-fit: cover;">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ tool.name }}</h5>
+                            <p class="card-text">{{ tool.short_description }}</p>
+                            <!-- Rating -->
+                            {% if tool.rating %}
+                                <p class="card-text"><small class="text-muted">Rating: {{ tool.rating }}</small></p>
+                            {% endif %}
+                        </div>
+                        <div class="card-footer">
+                            <small class="text-muted">Category: {{ tool.category }}</small>
+                            <!-- Button to visit URL -->
+                            <a href="{{ tool.url }}" class="btn btn-primary float-right" target="_blank">Visit</a>
+                            <a href="{% url 'tool_detail' tool.id %}" class="btn btn-primary">View Details</a>
+    
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <p>No tools available.</p>
+            {% endfor %}
+        
+        <!-- This will be cleared and replaced with search results -->
+    </div>
+
+    <nav aria-label="Page navigation example">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.7.7/handlebars.min.js"></script>
+<script src="https://twitter.github.io/typeahead.js/releases/latest/typeahead.bundle.js"></script>
+<script>
+$(document).ready(function() {
+    var tools = new Bloodhound({
+        datumTokenizer: Bloodhound.tokenizers.whitespace,
+        queryTokenizer: Bloodhound.tokenizers.whitespace,
+        remote: {
+            url: '/search/?q=%QUERY',
+            wildcard: '%QUERY'
+        }
+    });
+
+    var cardsContainer = $("#results-container");
+
+    // Cache initial results HTML
+    var initialResultsHtml = cardsContainer.html();
+
+    // Initialize the typeahead UI
+    $('#search-input').typeahead(null, {
+        name: 'tools',
+        display: 'name',
+        source: tools.ttAdapter(),
+        
+    }).on('typeahead:select', function(ev, suggestion) {
+        cardsContainer.empty();  // Clear existing cards
+
+        // Fetch new results based on the selection
+        $.ajax({
+            url: '/search/?q=' + encodeURIComponent(suggestion.name), // encodeURIComponent to handle special characters
+            success: function(data) {
+                // Populate with new results
+                console.log("Data received from search:", data); // Log the data received
+    
+                populateResults(data);
+            },
+            error: function(error) {
+                console.error("Error fetching search results: ", error);
+            }
+        });
+    });
+
+    // Revert to initial results when input is cleared
+    $('#search-input').on('input', function() {
+        if($(this).val().trim() === '') {
+            cardsContainer.html(initialResultsHtml);
+        }
+    });
+
+    function populateResults(data) {
+        data.forEach(function(tool) {
+            var cardHtml = 
+            `<div class="col">
+                <div class="card h-100">
+                    <img src="${tool.image_url}" class="card-img-top" alt="${tool.name}" style="height: 200px; object-fit: cover;">
+                    <div class="card-body">
+                        <h5 class="card-title">${tool.name}</h5>
+                        <p class="card-text">${tool.short_description}</p>
+                        <p class="card-text"><small class="text-muted">Rating: ${tool.rating}</small></p>
+                    </div>
+                    <div class="card-footer">
+                        <small class="text-muted">Category: ${tool.category}</small>
+                        <a href="${tool.url}" class="btn btn-primary float-right" target="_blank">Visit</a>
+                        <a href="/tool/${tool.id}" class="btn btn-primary">View Details</a>
+                    </div>
+                </div>
+            </div>`;
+            cardsContainer.append(cardHtml);
+        });
+    }
+});
+</script>
+{% endblock %}

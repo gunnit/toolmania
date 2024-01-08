@@ -1,0 +1,11 @@
+/* Custom styles for navbar */
+.navbar-brand {
+    font-weight: bold;
+    color: #f8f9fa !important;
+}
+
+.nav-link {
+    color: #f8f9fa !important;
+}
+
+/* Add more custom styles as needed */
